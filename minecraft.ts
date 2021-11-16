@@ -7,7 +7,7 @@ async function create() {
     javaServer: {
       path: './minecraft-server',
       jar: 'minecraft_server.1.17.1.jar',
-      args: ['-Xmx1024G', '-Xms1024G']
+      args: ['-Xmx3G', '-Xms3G']
     }
   })
   useEvents(java_server)
