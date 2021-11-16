@@ -3,7 +3,6 @@ import { createBot, setupBot, startBot, createEventHandlers } from "https://deno
 // fwiw, we can probably accomplish everything the bot does with a webhook
 
 const APPLICATION_ID = 909886742599991386n
-// const ACTIVITY_CHANNEL = 909897199649980486n
 
 
 async function create() {

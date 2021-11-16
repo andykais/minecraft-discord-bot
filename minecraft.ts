@@ -12,12 +12,6 @@ async function create() {
   })
   useEvents(java_server)
   java_server.start()
-  java_server.on('login', (event) => {
-    console.log(event.player, 'logged in')
-  })
-  java_server.on('logout', (event) => {
-    console.log(event.player, 'logged out')
-  })
   return java_server
 }
 

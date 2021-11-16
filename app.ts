@@ -14,5 +14,7 @@ minecraft_server.on('login', event => {
 minecraft_server.on('logout', event => {
   const message = `${event.player} has logged out.`
   console.log(`player ${message}`)
-  bot.helpers.sendMessage(ACTIVITY_CHANNEL, message)
+  // I did some thinking and logout messages are noisy and will make people self conscious.
+  // Instead we only need to highlight logins
+  // bot.helpers.sendMessage(ACTIVITY_CHANNEL, message)
 })
