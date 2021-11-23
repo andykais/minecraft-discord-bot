@@ -1,39 +1,23 @@
-function create_server() {
-  const port = parseInt(Deno.env.get('PORT') ?? '8001')
-  if (isNaN(port)) throw new Error('invalid port specified')
+import { serve, serveTls } from "https://deno.land/std@0.115.1/http/server.ts";
+import type { ServeInit } from "https://deno.land/std@0.115.1/http/server.ts"
+
+function handler(request: Request): Response {
+  return new Response('Come along, with me...', { status: 200 })
+}
+
+async function launch_server() {
   const certFile = Deno.env.get('CERT')
   const keyFile = Deno.env.get('CERT_KEY')
-
   if (certFile && keyFile) {
-    console.log('Spinning up https server')
-    return Deno.listenTls({
-      port: 443,
-      certFile,
-      keyFile,
-    })
+    console.log('https server listening on port', 443)
+    await serveTls(handler, {certFile, keyFile})
   } else {
-    console.log('listening on port', port)
-    return Deno.listen({ port })
+    const port = parseInt(Deno.env.get('PORT') ?? '8001')
+    if (isNaN(port)) throw new Error('invalid port specified')
+    console.log('http server listening on port', port)
+    await serve(handler, { addr: `:${port}` })
   }
 }
 
-const server = create_server()
-for await (const conn of server) {
-  handle_conn(conn)
-}
 
-async function handle_conn(conn: Deno.Conn) {
-  const httpConn = Deno.serveHttp(conn);
-  try {
-    for await (const requestEvent of httpConn) {
-      await requestEvent.respondWith(
-        new Response("Come along, with me...", {
-          status: 200,
-        }),
-      )
-    }
-  } catch (e) {
-    if (e instanceof Deno.errors.Http) {}
-    throw e
-  }
-}
+await launch_server()
