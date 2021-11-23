@@ -24,11 +24,16 @@ for await (const conn of server) {
 
 async function handle_conn(conn: Deno.Conn) {
   const httpConn = Deno.serveHttp(conn);
-  for await (const requestEvent of httpConn) {
-    await requestEvent.respondWith(
-      new Response("Come along, with me...", {
-        status: 200,
-      }),
-    );
+  try {
+    for await (const requestEvent of httpConn) {
+      await requestEvent.respondWith(
+        new Response("Come along, with me...", {
+          status: 200,
+        }),
+      )
+    }
+  } catch (e) {
+    if (e instanceof Deno.errors.Http) {}
+    throw e
   }
 }
