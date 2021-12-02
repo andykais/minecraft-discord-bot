@@ -6,7 +6,7 @@ async function create() {
   const java_server = new JavaServer({
     javaServer: {
       path: './minecraft-server',
-      jar: 'minecraft_server.1.17.1.jar',
+      jar: 'minecraft_server.1.18.jar',
       args: ['-Xmx3G', '-Xms3G']
     }
   })

@@ -2,6 +2,7 @@ import { serve, serveTls } from "https://deno.land/std@0.115.1/http/server.ts";
 import type { ServeInit } from "https://deno.land/std@0.115.1/http/server.ts"
 
 function handler(request: Request): Response {
+	console.log('received request')
   return new Response('Come along, with me...', { status: 200 })
 }
 
