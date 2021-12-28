@@ -3,10 +3,14 @@ import { JavaServer } from 'https://deno.land/x/scriptserver@0.0.3-deno/java_ser
 import { useEvents } from 'https://deno.land/x/scriptserver@0.0.3-deno/events.ts'
 
 async function create() {
+  // TODO: Base these on config instead of hardcoding
+  const world_dir = './worlds/island';
+  const jar_file = '/root/minecraft-discord-bot/dependencies/minecraft-server/minecraft_server.1.18.jar';
+
   const java_server = new JavaServer({
     javaServer: {
-      path: './minecraft-server',
-      jar: 'minecraft_server.1.18.jar',
+      path: world_dir,
+      jar: jar_file,
       args: ['-Xmx3G', '-Xms3G']
     }
   })
