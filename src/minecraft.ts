@@ -5,7 +5,7 @@ import { useEvents } from 'https://deno.land/x/scriptserver@0.0.3-deno/events.ts
 async function create() {
   const java_server = new JavaServer({
     javaServer: {
-      path: './minecraft-server',
+      path: './dependencies/minecraft-server',
       jar: 'minecraft_server.1.18.jar',
       args: ['-Xmx3G', '-Xms3G']
     }
