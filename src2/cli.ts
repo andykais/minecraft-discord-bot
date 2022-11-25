@@ -15,5 +15,4 @@ const config: Config = {
 }
 
 const app = new App(config)
-await app.services.minecraft.backup()
-// await app.start()
+await app.start()

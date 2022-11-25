@@ -4,6 +4,7 @@ import * as path from 'https://deno.land/std@0.165.0/path/mod.ts'
 import { tgz } from "https://deno.land/x/compress@v0.4.4/mod.ts";
 import * as script_server from "npm:@scriptserver/core";
 import { type Config } from "../config.ts";
+import * as cron from 'https://deno.land/x/deno_cron/cron.ts';
 
 
 interface ScriptServer {
@@ -42,7 +43,12 @@ class MinecraftServer {
         port: 25575,
         password: 'password',
       },
-    });
+    })
+
+    // schedule daily backups at 6am. Super helpful cron site: https://crontab.guru/#0_6_*_*_*
+    cron.cron('0 6 * * *', () => {
+      this.backup()
+    })
   }
 
   async start() {
@@ -56,6 +62,7 @@ class MinecraftServer {
   }
 
   async stop() {
+    cron.stop()
     // NOTE the stop api requires --allow-run all
     const stopped = Promise.all([
       new Promise<void>(resolve => this.script_server.javaServer.on('stop', resolve)),
@@ -66,6 +73,7 @@ class MinecraftServer {
   }
 
   async backup() {
+    console.log(`Backing up '${this.config.minecraft.world_name}' server...`)
     const now = new Date()
     const daily_backup_folder = path.join(MINECRAFT_BACKUPS_DAILY, this.config.minecraft.world_name)
     await Deno.mkdir(daily_backup_folder, { recursive: true })
