@@ -1,2 +1,2 @@
 *.jar filter=lfs diff=lfs merge=lfs -text
-worlds/**/world/** filter=lfs diff=lfs merge=lfs -text
+resources/backups/*.tar.gz filter=lfs diff=lfs merge=lfs -text

@@ -9,17 +9,11 @@ interface Config {
     world_seed?: string
     world_description?: string
   }
+
+  discord: {
+    messages_channel: bigint
+  }
 }
 
 
-const ConfigParser = z.object({
-  minecraft: z.object({
-    version: z.string(),
-  })
-})
-
-
-// exactly({} as z.input<typeof Template>, {} as t.Template)
-
-export { ConfigParser }
 export type { Config }

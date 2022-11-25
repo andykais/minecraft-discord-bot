@@ -14,6 +14,11 @@ class App {
       minecraft: new MinecraftServer(config),
       discord: new DiscordBot(config),
     }
+    this.services.minecraft.on('login', event => {
+      const message = `${event.player} has logged in.`
+      console.log(`player ${message}`)
+      this.services.discord.send(message)
+    })
   }
 
   async start() {

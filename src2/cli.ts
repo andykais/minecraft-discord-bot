@@ -4,13 +4,16 @@ import { App } from './mod.ts'
 import type { Config } from './config.ts'
 
 const args = flags.parse(Deno.args)
-const minecraft_server_version = args.minecraft_server_version ?? '1.18'
+const minecraft_server_version = args.minecraft_server_version ?? '1.18.2'
 const world_name = args.world_name ?? 'default'
 
 const config: Config = {
   minecraft: {
     world_name,
-    server_version: minecraft_server_version
+    server_version: minecraft_server_version,
+  },
+  discord: {
+    messages_channel: 909897199649980486n,
   }
 }
 

@@ -510,6 +510,7 @@
       "@detachhead/ts-helpers": "@detachhead/ts-helpers@12.2.0",
       "@scriptserver/core": "@scriptserver/core@2.0.4",
       "@scriptserver/essentials": "@scriptserver/essentials@2.0.4",
+      "@scriptserver/event": "@scriptserver/event@2.0.4",
       "rxjs": "rxjs@7.5.7"
     },
     "packages": {

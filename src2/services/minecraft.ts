@@ -2,14 +2,15 @@ import * as fs from "https://deno.land/std@0.165.0/fs/mod.ts";
 import * as datetime from "https://deno.land/std@0.67.0/datetime/mod.ts";
 import * as path from 'https://deno.land/std@0.165.0/path/mod.ts'
 import { tgz } from "https://deno.land/x/compress@v0.4.4/mod.ts";
-import * as script_server from "npm:@scriptserver/core";
+import * as ss_core from "npm:@scriptserver/core";
+import * as ss_event from 'npm:@scriptserver/event';
 import { type Config } from "../config.ts";
 import * as cron from 'https://deno.land/x/deno_cron/cron.ts';
 
 
 interface ScriptServer {
   javaServer: {
-    on: (event: string, fn: () => void) => void
+    on: (event: string, fn: (event: any) => void) => void
   }
   rconConnection: {
     send: (message: string) => void
@@ -19,9 +20,10 @@ interface ScriptServer {
   stop(): void
 }
 
-const ScriptServer = script_server.ScriptServer
+const ScriptServer = ss_core.ScriptServer
+const useEvent = ss_event.useEvent
 
-const MINECRAFT_SERVER_FOLDER = path.fromFileUrl(import.meta.resolve('../../dependencies/minecraft-server/'))
+const MINECRAFT_SERVER_FOLDER = path.fromFileUrl(import.meta.resolve('../../resources/jars/minecraft-server/'))
 const MINECRAFT_WORLDS_FOLDER = path.fromFileUrl(import.meta.resolve('../../resources/worlds'))
 const MINECRAFT_INITIALIZATION = path.fromFileUrl(import.meta.resolve('../../resources/initialization'))
 const MINECRAFT_BACKUPS_DAILY = path.fromFileUrl(import.meta.resolve('../../resources/backups'))
@@ -44,6 +46,7 @@ class MinecraftServer {
         password: 'password',
       },
     })
+    useEvent(this.script_server.javaServer);
 
     // schedule daily backups at 6am. Super helpful cron site: https://crontab.guru/#0_6_*_*_*
     cron.cron('0 6 * * *', () => {
@@ -52,13 +55,23 @@ class MinecraftServer {
   }
 
   async start() {
-    await fs.copy(MINECRAFT_INITIALIZATION, this.world_directory)
+    console.log(`Starting minecraft world in ${this.world_directory} folder`)
+    // copy init files on first startup
+    await fs.copy(MINECRAFT_INITIALIZATION, this.world_directory).catch(e => {
+      if (e instanceof Deno.errors.AlreadyExists === false) throw e
+    })
     this.script_server.start()
 
     await Promise.all([
       new Promise<void>(resolve => this.script_server.javaServer.on('start', resolve)).then(() => console.log('Minecraft Java Server Started.')),
       new Promise<void>(resolve => this.script_server.rconConnection.on('connected', resolve)).then(() => console.log('RCON Connected.')),
     ])
+  }
+
+  async on(event: string, fn: (event: any) => void) {
+    this.script_server.javaServer.on('login', (event: any) => {
+      fn(event)
+    })
   }
 
   async stop() {
