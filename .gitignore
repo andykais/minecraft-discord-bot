@@ -1,2 +1,3 @@
 # Swap files for fools who use vim
 .*.sw*
+resources/worlds
