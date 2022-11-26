@@ -7,7 +7,6 @@ import * as ss_event from 'npm:@scriptserver/event';
 import { type Config } from "../config.ts";
 import * as cron from 'https://deno.land/x/deno_cron/cron.ts';
 
-
 interface ScriptServer {
   javaServer: {
     on: (event: string, fn: (event: any) => void) => void
@@ -39,13 +38,13 @@ class MinecraftServer {
       javaServer: {
         path: this.world_directory,
         jar: path.join(MINECRAFT_SERVER_FOLDER, server_filename),
-        args: ['-Xmx3G', '-Xms3G']
+        args: ['-Xmx2G', '-Xms2G']
       },
       rconConnection: {
         port: 25575,
         password: 'password',
       },
-    })
+    }) as ScriptServer
     useEvent(this.script_server.javaServer);
 
     // schedule daily backups at 6am. Super helpful cron site: https://crontab.guru/#0_6_*_*_*
