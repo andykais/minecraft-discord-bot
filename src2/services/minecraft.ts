@@ -54,7 +54,7 @@ class MinecraftServer {
   }
 
   async start() {
-    console.log(`Starting minecraft world in ${this.world_directory} folder`)
+    console.log(`Starting minecraft world in ${this.world_directory} folder on version ${this.config.minecraft.server_version}`)
     // copy init files on first startup
     await fs.copy(MINECRAFT_INITIALIZATION, this.world_directory).catch(e => {
       if (e instanceof Deno.errors.AlreadyExists === false) throw e
@@ -85,6 +85,17 @@ class MinecraftServer {
   }
 
   async backup() {
+    // push to github
+    await new Deno.Command('git', { args: ['add', MINECRAFT_WORLDS_FOLDER], stdout: 'inherit', stderr: 'inherit' }).output()
+
+    await new Deno.Command('git', { args: ['commit', '-m', `Daily backup`], stdout: 'inherit', stderr: 'inherit' }).output()
+
+    console.log('Pushing backup to git...')
+    await new Deno.Command('git', { args: ['push'], stdout: 'inherit', stderr: 'inherit' }).output()
+  }
+
+  // NOTE github would not accept large archive files (the largest were around 0.5GB)
+  async backup_archives() {
     console.log(`Backing up '${this.config.minecraft.world_name}' server...`)
     const now = new Date()
     const daily_backup_folder = path.join(MINECRAFT_BACKUPS_DAILY, this.config.minecraft.world_name)
@@ -95,7 +106,8 @@ class MinecraftServer {
     this.script_server.rconConnection.send('save-all')
     const backup_filename = now.toISOString() + '.tar.gz'
     const latest_backup_filepath = path.join(daily_backup_folder, backup_filename)
-    await tgz.compress(this.world_directory, latest_backup_filepath)
+    console.log('compressing...')
+    await tgz.compress(this.world_directory, latest_backup_filepath, { debug: true })
     this.script_server.rconConnection.send('save-on')
     this.script_server.rconConnection.send('say [§bNOTICE§r] Server backup process is complete. Carry on.')
 
@@ -110,12 +122,14 @@ class MinecraftServer {
         await Deno.remove(backup_filepath)
       }
     }
+
     // push to github
-    await new Deno.Command('git', { args: ['add', daily_backup_folder]}).output()
+    await new Deno.Command('git', { args: ['add', daily_backup_folder], stdout: 'inherit', stderr: 'inherit' }).output()
 
-    await new Deno.Command('git', { args: ['commit', '-m', `Daily backup`]}).output()
+    await new Deno.Command('git', { args: ['commit', '-m', `Daily backup`], stdout: 'inherit', stderr: 'inherit' }).output()
 
-    await new Deno.Command('git', { args: ['push']}).output()
+    console.log('Pushing backup to git...')
+    await new Deno.Command('git', { args: ['push'], stdout: 'inherit', stderr: 'inherit' }).output()
 
     console.log('Backup complete')
   }
