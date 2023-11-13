@@ -1,5 +1,0 @@
-{
-  "tasks": {
-    "develop": "deno run --allow-read --allow-write --unstable --allow-run=git,java --allow-env=DISCORD_TOKEN --allow-net=192.168.1.1,127.0.0.1,127.0.0.0,discord.com,gateway.discord.gg --check --watch src2/cli.ts"
-  }
-}
