@@ -7,6 +7,7 @@ interface ConfigInput {
     world_name: string
   }
   discord?: {
+    token?: string
     activity_channel: bigint
   }
 }
@@ -27,6 +28,7 @@ class Config {
     // }
   }
   discord?: {
+    token?: string
     activity_channel: bigint
   }
 
@@ -47,7 +49,8 @@ class Config {
     }
     if (config_input.discord) {
       this.discord = {
-        activity_channel: config_input.discord.activity_channel
+        activity_channel: config_input.discord.activity_channel,
+        token: config_input.discord.token,
       }
     }
   }

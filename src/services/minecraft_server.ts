@@ -2,7 +2,7 @@ import { ScriptServer } from '@scriptserver/core'
 import * as fs from 'std/fs/mod.ts'
 import { useEvent } from '@scriptserver/event'
 import { Service } from './mod.ts'
-import { JavaServer } from './java_server.ts'
+import { JavaServer, JavaEventHandler } from './java_server.ts'
 import { Config } from "../config.ts";
 
 class MinecraftServerService extends Service {
@@ -10,7 +10,7 @@ class MinecraftServerService extends Service {
 
   constructor(config: Config) {
     super(config)
-    this.#java_server = new JavaServer(config)
+    this.#java_server = new JavaServer(config, this.#server_event_handler)
   }
 
   async start() {
@@ -51,6 +51,10 @@ class MinecraftServerService extends Service {
 
   async stop() {
     throw new Error('unimplemented')
+  }
+
+  #server_event_handler: JavaEventHandler = async (event, data) => {
+    if (event === 'LOGIN') console.log(data.username)
   }
 }
 

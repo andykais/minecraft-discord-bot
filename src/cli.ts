@@ -10,9 +10,10 @@ const command = new Command()
   .option('--discord-channel <discord:string>', 'User activity discord channel the bot will send messages to.')
   .action(async (args) => {
 
-    const env_file = await dotenv.load();
+    const env_file = await dotenv.load()
     const env_vars = {
-      discord_channel: Deno.env.get('DISCORD_CHANNEL') ?? env_file['DISCORD_CHANNEL']
+      discord_token: Deno.env.get('DISCORD_TOKEN') ?? env_file['DISCORD_TOKEN'],
+      discord_channel: Deno.env.get('DISCORD_CHANNEL') ?? env_file['DISCORD_CHANNEL'],
     }
 
     const app = new App({
@@ -21,9 +22,9 @@ const command = new Command()
         world_name: args.minecraftWorldName
       },
       discord: args.discordChannel
-        ? { activity_channel: BigInt(args.discordChannel) }
+        ? { activity_channel: BigInt(args.discordChannel), token: env_vars.discord_token }
         : env_vars.discord_channel
-          ? { activity_channel: BigInt(env_vars.discord_channel) }
+          ? { activity_channel: BigInt(env_vars.discord_channel), token: env_vars.discord_token }
           : undefined
     })
     await app.start()

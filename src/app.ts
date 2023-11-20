@@ -6,8 +6,8 @@ import { MinecraftServerService } from "./services/minecraft_server.ts"
 interface Context {
   config: Config
   services: {
-    minecraft_server: MinecraftServerService
-    // discord_bot: DiscordBotService
+    discord_bot: DiscordBotService
+    // minecraft_server: MinecraftServerService
   }
 }
 
@@ -20,8 +20,8 @@ class App {
     this.context = {
       config,
       services: {
-        // discord_bot: new DiscordBotService(),
-        minecraft_server: new MinecraftServerService(config),
+        discord_bot: new DiscordBotService(config),
+        // minecraft_server: new MinecraftServerService(config),
       }
     }
     // dependency injection on context (we cant pass in the thing we are instantiating right away)

@@ -27,6 +27,20 @@ const java_server_event_parsers = Object.fromEntries(
 ) as JavaServerEventParsers
 
 
+type JavaEventHandler = <T extends JavaServerEvents, E extends keyof T>(event: E, value: T[E]) => Promise<void>
+type JavaEventHandler2 = <T extends JavaServerEvents, E extends keyof T>(event: E, fn: (value: T[E]) => void) => void
+
+let foo = {} as JavaEventHandler2
+foo('LOGIN', (data) => {
+  console.log(data.username)
+})
+// const foo: JavaEventHandler2 = (event, data) => {
+//   if (event === 'LOGIN') {
+//     console.log(data.username)
+//   }
+// }
+
+
 class JavaServer extends Service {
   #java_process: Deno.ChildProcess | undefined
   #promises: Promise<any>[] = []
@@ -37,7 +51,7 @@ class JavaServer extends Service {
     throw new Error('uninitialized')
   }
 
-  constructor(config: Config) {
+  constructor(config: Config, event_handler: JavaEventHandler) {
     super(config)
   }
 
@@ -128,4 +142,4 @@ class JavaServer extends Service {
   }
 }
 
-export { JavaServer }
+export { JavaServer, type JavaServerEvents, type JavaEventHandler }
