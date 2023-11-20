@@ -1,20 +1,55 @@
-import { create as create_discord } from './discord.ts'
-import { create as create_minecraft } from './minecraft.ts'
+import { Config, type ConfigInput } from './config.ts'
+import { DiscordBotService } from "./services/discord_bot.ts"
+import { MinecraftServerService } from "./services/minecraft_server.ts"
 
-const ACTIVITY_CHANNEL = 909897199649980486n
+
+interface Context {
+  config: Config
+  services: {
+    minecraft_server: MinecraftServerService
+    // discord_bot: DiscordBotService
+  }
+}
+
+class App {
+  context: Context
+
+  constructor(config_input: ConfigInput) {
+    const config = new Config(config_input)
+
+    this.context = {
+      config,
+      services: {
+        // discord_bot: new DiscordBotService(),
+        minecraft_server: new MinecraftServerService(config),
+      }
+    }
+    // dependency injection on context (we cant pass in the thing we are instantiating right away)
+    for (const service of Object.values(this.context.services)) service.context = this.context
+  }
+
+  async start() {
+    const promises: Promise<void>[] = []
+    for (const service of Object.values(this.context.services)) {
+      // TODO should we pass the context here, rather than this weird getter/setter?
+      promises.push(service.start())
+    }
+
+    await Promise.all(promises)
+    console.log('App is up.')
+  }
+
+  status() {
+    return Promise.all(Object.values(this.context.services).map(service => service.status()))
+  }
+
+  async stop() {
+    for (const service of Object.values(this.context.services)) {
+      await service.stop()
+    }
+  }
+}
 
 
-const bot = await create_discord()
-const minecraft_server = await create_minecraft()
-minecraft_server.on('login', event => {
-  const message = `${event.player} has logged in.`
-  console.log(`player ${message}`)
-  bot.helpers.sendMessage(ACTIVITY_CHANNEL, message)
-})
-minecraft_server.on('logout', event => {
-  const message = `${event.player} has logged out.`
-  console.log(`player ${message}`)
-  // I did some thinking and logout messages are noisy and will make people self conscious.
-  // Instead we only need to highlight logins
-  // bot.helpers.sendMessage(ACTIVITY_CHANNEL, message)
-})
+export type { Config, Context }
+export { App }

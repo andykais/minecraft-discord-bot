@@ -1,2 +1,7 @@
 # Swap files for fools who use vim
 .*.sw*
+
+.env
+scratchwork
+# deno task develop world
+resources/worlds/default
