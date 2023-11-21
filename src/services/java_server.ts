@@ -6,6 +6,11 @@ type Entries<T> = {
     [K in keyof T]: [K, T[K]]
 }[keyof T][]
 
+type Mapper<T> = {
+  [K in keyof T]: { type: K; data: T[K]}
+}
+type ValueOf<T> = T extends Record<string, infer V> ? V : never
+
 interface JavaServerEvents {
   STARTED: { elapsed: string }
   LOGIN: { username: string }
@@ -16,6 +21,7 @@ type JavaServerEvent = keyof JavaServerEvents
 type JavaServerEventParsers = {
   [E in keyof JavaServerEvents]: (line: string) => JavaServerEvents[E] | undefined
 }
+type EventPayload = ValueOf<Mapper<JavaServerEvents>>
 
 const java_server_event_regexes: Record<JavaServerEvent, RegExp> = {
   STARTED: /Done \((?<elapsed>\d+\.\d+[a-z]+)\)/,
@@ -27,18 +33,7 @@ const java_server_event_parsers = Object.fromEntries(
 ) as JavaServerEventParsers
 
 
-type JavaEventHandler = <T extends JavaServerEvents, E extends keyof T>(event: E, value: T[E]) => Promise<void>
-type JavaEventHandler2 = <T extends JavaServerEvents, E extends keyof T>(event: E, fn: (value: T[E]) => void) => void
-
-let foo = {} as JavaEventHandler2
-foo('LOGIN', (data) => {
-  console.log(data.username)
-})
-// const foo: JavaEventHandler2 = (event, data) => {
-//   if (event === 'LOGIN') {
-//     console.log(data.username)
-//   }
-// }
+type JavaEventHandler = (event: EventPayload) => void
 
 
 class JavaServer extends Service {

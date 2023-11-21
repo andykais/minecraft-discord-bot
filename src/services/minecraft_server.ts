@@ -53,8 +53,8 @@ class MinecraftServerService extends Service {
     throw new Error('unimplemented')
   }
 
-  #server_event_handler: JavaEventHandler = async (event, data) => {
-    if (event === 'LOGIN') console.log(data.username)
+  #server_event_handler: JavaEventHandler = async (event) => {
+    if (event.type === 'LOGIN') this.context.services.discord_bot.send_message('ACTIVITY_CHANNEL', `${event.data.username} has logged in`)
   }
 }
 
