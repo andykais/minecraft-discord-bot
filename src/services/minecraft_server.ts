@@ -14,35 +14,9 @@ class MinecraftServerService extends Service {
   }
 
   async start() {
+    this.#java_server.context = this.context
     console.log(`Starting minecraft world '${this.config.minecraft.world.name}'`)
     await this.#java_server.start()
-
-    // // errors from scriptserver are pretty bad (just console logs, so we can try to get ahead of errors this way)
-    // if (await fs.exists(this.context.config.minecraft.server.jar_filepath) === false) {
-    //   throw new Error(`Cannot find server jar ${this.context.config.minecraft.server.jar_filepath}`)
-    // }
-
-    // const script_server = new ScriptServer({
-    //   javaServer: {
-    //     path: this.context.config.minecraft.world.folder,
-    //     jar: this.context.config.minecraft.server.jar_filepath,
-    //     args: ['-Xmx2G', '-Xms2G']
-    //   },
-    //   rconConnection: {
-    //     port: 25575,
-    //     password: 'password',
-    //   },
-    // })
-    // useEvent(script_server.javaServer)
-    // script_server.start()
-    // script_server.javaServer.on('stop', () => {
-    //   console.log('server stopped?')
-    // })
-    // // this.services.minecraft.on('login', event => {
-    // //   const message = `${event.player} has logged in.`
-    // //   console.log(`player ${message}`)
-    // //   this.services.discord.send(message)
-    // // })
   }
 
   async status() {
@@ -50,11 +24,28 @@ class MinecraftServerService extends Service {
   }
 
   async stop() {
-    throw new Error('unimplemented')
+    await this.#java_server.stop()
+    this.context.services.discord_bot.send_message('MONITOR_CHANNEL', 'Java server is down.')
   }
 
   #server_event_handler: JavaEventHandler = async (event) => {
-    if (event.type === 'LOGIN') this.context.services.discord_bot.send_message('ACTIVITY_CHANNEL', `${event.data.username} has logged in`)
+    console.log('event:', event.type, event.data)
+    const { discord_bot } = this.context.services
+
+    switch(event.type) {
+      case 'LOGIN': {
+        discord_bot.send_message('ACTIVITY_CHANNEL', `${event.data.username} has logged in`)
+        break
+      }
+      case 'WARNING': {
+        discord_bot.send_message('MONITOR_CHANNEL', `WARNING: ${event.data.message}`)
+        break
+      }
+      case 'STARTED': {
+        this.context.services.discord_bot.send_message('MONITOR_CHANNEL', `Minecraft server '${this.config.minecraft.world.name}' started in ${event.data.elapsed}.`)
+        break
+      }
+    }
   }
 }
 

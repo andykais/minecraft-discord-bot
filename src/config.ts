@@ -6,9 +6,10 @@ interface ConfigInput {
     version: string
     world_name: string
   }
-  discord?: {
+  discord: {
     token?: string
-    activity_channel: bigint
+    activity_channel?: string
+    monitor_channel?: string
   }
 }
 
@@ -29,7 +30,8 @@ class Config {
   }
   discord?: {
     token?: string
-    activity_channel: bigint
+    activity_channel?: bigint
+    monitor_channel?: bigint
   }
 
   constructor(config_input: ConfigInput) {
@@ -47,11 +49,14 @@ class Config {
       //   backups_folder: path.fromFileUrl(import.meta.resolve('../resources/backups')),
       // }
     }
-    if (config_input.discord) {
-      this.discord = {
-        activity_channel: config_input.discord.activity_channel,
-        token: config_input.discord.token,
-      }
+    this.discord = {
+      token: config_input.discord.token,
+    }
+    if (config_input.discord.activity_channel) {
+      this.discord.activity_channel = BigInt(config_input.discord.activity_channel)
+    }
+    if (config_input.discord.monitor_channel) {
+      this.discord.monitor_channel = BigInt(config_input.discord.monitor_channel)
     }
   }
 }

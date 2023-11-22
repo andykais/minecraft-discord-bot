@@ -15,7 +15,7 @@ interface JavaServerEvents {
   STARTED: { elapsed: string }
   LOGIN: { username: string }
   LOGOUT: { username: string }
-  // WARNING: { message: string }
+  WARNING: { message: string }
 }
 type JavaServerEvent = keyof JavaServerEvents
 type JavaServerEventParsers = {
@@ -27,6 +27,7 @@ const java_server_event_regexes: Record<JavaServerEvent, RegExp> = {
   STARTED: /Done \((?<elapsed>\d+\.\d+[a-z]+)\)/,
   LOGIN: / (?<username>[^ ]*?) joined the game/,
   LOGOUT: / (?<username>[^ ]*?) left the game/,
+  WARNING: /WARNING.:(?<message>.*)/,
 }
 const java_server_event_parsers = Object.fromEntries(
   Object.entries(java_server_event_regexes).map(entry => [entry[0], line => line.match(entry[1])?.groups])
@@ -40,6 +41,7 @@ class JavaServer extends Service {
   #java_process: Deno.ChildProcess | undefined
   #promises: Promise<any>[] = []
   #startup_promise_controller = Promise.withResolvers<{elapsed: string}>()
+  #parent_event_handler: JavaEventHandler
 
   get #server() {
     if (this.#java_process) return this.#java_process
@@ -48,6 +50,7 @@ class JavaServer extends Service {
 
   constructor(config: Config, event_handler: JavaEventHandler) {
     super(config)
+    this.#parent_event_handler = event_handler
   }
 
   status() { return Promise.all(this.#promises) }
@@ -88,6 +91,7 @@ class JavaServer extends Service {
     // this.#promises.push(this.#parse_stderr())
 
     const result = await this.#startup_promise_controller.promise
+
     console.log('Java server is up.')
   }
 
@@ -105,7 +109,7 @@ class JavaServer extends Service {
       console.log(line)
       for (const [event, regex_parser] of Object.entries(java_server_event_parsers) as Entries<JavaServerEventParsers>) {
         const result = regex_parser(line)
-        if (result) this.#handle_event(event, result)
+        if (result) this.#handle_event({ type: event, data: result } as EventPayload)
       }
     }
   }
@@ -124,9 +128,9 @@ class JavaServer extends Service {
 
   }
 
-  async #handle_event<T extends JavaServerEvents, E extends keyof T>(event: E, value: T[E]) {
-    if (event === 'STARTED') this.#startup_promise_controller.resolve(value as JavaServerEvents['STARTED'])
-    console.log(event, value)
+  async #handle_event(event: EventPayload) {
+    if (event.type === 'STARTED') this.#startup_promise_controller.resolve(event.data)
+    await this.#parent_event_handler(event)
   }
 
   async #send_command(command: string) {

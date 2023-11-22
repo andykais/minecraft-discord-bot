@@ -11,6 +11,7 @@ type DiscordChannelType =
 class DiscordBotService extends Service {
   #token: string
   #activity_channel_id?: string
+  #monitor_channel_id?: string
   #bot?: discord.Bot
   #discord_client_promise_controller: {resolve: () => void; reject: (e: Error) => void; promise: Promise<void>}
 
@@ -24,6 +25,7 @@ class DiscordBotService extends Service {
     if (config.discord?.token) this.#token = config.discord.token
     else throw new Error('Attempted to launch discord bot service without DISCORD_TOKEN environment variable')
     if (config.discord?.activity_channel) this.#activity_channel_id = config.discord.activity_channel.toString()
+    if (config.discord?.monitor_channel) this.#monitor_channel_id = config.discord.monitor_channel.toString()
 
     this.#discord_client_promise_controller = Promise.withResolvers<void>()
   }
@@ -59,12 +61,14 @@ class DiscordBotService extends Service {
     switch(channel_type) {
       case 'ACTIVITY_CHANNEL': {
         if (this.#activity_channel_id) {
-          return await this.bot.helpers.sendMessage(this.#activity_channel_id, {content: 'hello world'})
+          return await this.bot.helpers.sendMessage(this.#activity_channel_id, {content: message})
         }
         break
       }
       case 'MONITOR_CHANNEL': {
-        throw new Error('unimplemented')
+        if (this.#monitor_channel_id) {
+          return await this.bot.helpers.sendMessage(this.#monitor_channel_id, {content: message})
+        }
       }
       default: {
         throw new Error(`Unexpected channel_type '${channel_type}'`)

@@ -7,7 +7,7 @@ interface Context {
   config: Config
   services: {
     discord_bot: DiscordBotService
-    // minecraft_server: MinecraftServerService
+    minecraft_server: MinecraftServerService
   }
 }
 
@@ -21,7 +21,7 @@ class App {
       config,
       services: {
         discord_bot: new DiscordBotService(config),
-        // minecraft_server: new MinecraftServerService(config),
+        minecraft_server: new MinecraftServerService(config),
       }
     }
     // dependency injection on context (we cant pass in the thing we are instantiating right away)
