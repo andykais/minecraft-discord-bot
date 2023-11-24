@@ -1,13 +1,10 @@
 {
   "tasks": {
-    "develop": "deno run --allow-read --allow-write --unstable --allow-run=git,java --allow-env --allow-net=192.168.1.1,127.0.0.1,127.0.0.0,discord.com,gateway.discord.gg --check --watch=.env src/cli.ts"
+    "develop": "deno run --allow-read --allow-write --unstable --allow-run=git,java --allow-env=DISCORD_TOKEN,DISCORD_ACTIVITY_CHANNEL,DISCORD_MONITOR_CHANNEL --allow-net=192.168.1.1,127.0.0.1,127.0.0.0,discord.com,gateway.discord.gg --check --watch=.env src/cli.ts"
   },
   "imports": {
     "std/": "https://deno.land/std@0.206.0/",
     "cliffy/": "https://deno.land/x/cliffy@v1.0.0-rc.3/",
-    "@scriptserver/core": "npm:@scriptserver/core@2.0.4",
-    "@scriptserver/event": "npm:@scriptserver/event@2.0.5",
-    "discord.js": "npm:discord.js",
     "discordeno": "https://deno.land/x/discordeno@18.0.0/mod.ts",
   }
 }

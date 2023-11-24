@@ -30,7 +30,7 @@ class DiscordBotService extends Service {
     this.#discord_client_promise_controller = Promise.withResolvers<void>()
   }
 
-  async start() {
+  async start_service() {
     const startup_promise_controller = Promise.withResolvers<void>()
 
     this.#bot = discord.createBot({
@@ -44,10 +44,9 @@ class DiscordBotService extends Service {
 
     await discord.startBot(this.#bot);
     await startup_promise_controller.promise
-    console.log('Discord bot is up.')
   }
 
-  async stop() {
+  async stop_service() {
     await discord.stopBot(this.bot)
     this.#discord_client_promise_controller.resolve()
   }

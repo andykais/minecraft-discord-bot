@@ -1,5 +1,6 @@
 import * as streams from 'std/streams/mod.ts'
 import { Config } from '../config.ts'
+import { Context } from '../app.ts'
 import { Service } from './mod.ts'
 
 type Entries<T> = {
@@ -34,17 +35,24 @@ const java_server_event_parsers = Object.fromEntries(
 ) as JavaServerEventParsers
 
 
-type JavaEventHandler = (event: EventPayload) => void
+type JavaEventHandler = (context: Context, event: EventPayload) => void
 
 
 class JavaServer extends Service {
   #java_process: Deno.ChildProcess | undefined
+  #java_process_stdin_writer: WritableStreamDefaultWriter<Uint8Array> | undefined
+  #stdin_encoder = new TextEncoder()
   #promises: Promise<any>[] = []
   #startup_promise_controller = Promise.withResolvers<{elapsed: string}>()
   #parent_event_handler: JavaEventHandler
 
   get #server() {
     if (this.#java_process) return this.#java_process
+    throw new Error('uninitialized')
+  }
+
+  get #stdin_writer() {
+    if (this.#java_process_stdin_writer) return this.#java_process_stdin_writer
     throw new Error('uninitialized')
   }
 
@@ -55,7 +63,7 @@ class JavaServer extends Service {
 
   status() { return Promise.all(this.#promises) }
 
-  async start() {
+  async start_service(context: Context) {
     const java_config = {
       version: this.config.minecraft.server.version,
       jar: this.config.minecraft.server.jar_filepath,
@@ -76,10 +84,12 @@ class JavaServer extends Service {
       stdin: 'piped',
     })
     this.#java_process = cmd.spawn()
+    this.#java_process_stdin_writer = this.#server.stdin.getWriter()
 
 
     const status_promise = this.#java_process.status
       .then(status => {
+        console.log(status)
         if (status.success === false) {
           const command_str = ['java', ...args].join(' ')
           throw new Error(`Java server failed.\n${command_str}`)
@@ -87,7 +97,7 @@ class JavaServer extends Service {
       })
 
     this.#promises.push(status_promise)
-    this.#promises.push(this.#parse_stdout())
+    this.#promises.push(this.#parse_stdout(context))
     // this.#promises.push(this.#parse_stderr())
 
     const result = await this.#startup_promise_controller.promise
@@ -95,12 +105,12 @@ class JavaServer extends Service {
     console.log('Java server is up.')
   }
 
-  async stop() {
+  async stop_service() {
+    console.log('stopping java server...')
     await this.#send_command('stop')
-    // this.#java_process.kill('SIGTERM')
   }
 
-  async #parse_stdout() {
+  async #parse_stdout(context: Context) {
     const stdout_stream = this.#server.stdout
       .pipeThrough(new TextDecoderStream())
       .pipeThrough(new streams.TextDelimiterStream('\n'))
@@ -109,7 +119,7 @@ class JavaServer extends Service {
       console.log(line)
       for (const [event, regex_parser] of Object.entries(java_server_event_parsers) as Entries<JavaServerEventParsers>) {
         const result = regex_parser(line)
-        if (result) this.#handle_event({ type: event, data: result } as EventPayload)
+        if (result) this.#handle_event(context, { type: event, data: result } as EventPayload)
       }
     }
   }
@@ -128,16 +138,15 @@ class JavaServer extends Service {
 
   }
 
-  async #handle_event(event: EventPayload) {
+  async #handle_event(context: Context, event: EventPayload) {
     if (event.type === 'STARTED') this.#startup_promise_controller.resolve(event.data)
-    await this.#parent_event_handler(event)
+    await this.#parent_event_handler(context, event)
   }
 
   async #send_command(command: string) {
     console.log('sending command:', command)
-    const stdin_writer = this.#server.stdin.getWriter()
-    await stdin_writer.write(new TextEncoder().encode(`/${command}\n`))
-    stdin_writer.releaseLock()
+    this.#stdin_writer.write(this.#stdin_encoder.encode(`/${command}\n`))
+    this.#stdin_writer.releaseLock()
   }
 }
 

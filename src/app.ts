@@ -1,4 +1,5 @@
-import { Config, type ConfigInput } from './config.ts'
+import { Config } from './config.ts'
+import { Service } from "./services/mod.ts"
 import { DiscordBotService } from "./services/discord_bot.ts"
 import { MinecraftServerService } from "./services/minecraft_server.ts"
 
@@ -11,11 +12,11 @@ interface Context {
   }
 }
 
-class App {
+class App extends Service {
   context: Context
 
-  constructor(config_input: ConfigInput) {
-    const config = new Config(config_input)
+  constructor(config: Config) {
+    super(config)
 
     this.context = {
       config,
@@ -24,28 +25,32 @@ class App {
         minecraft_server: new MinecraftServerService(config),
       }
     }
-    // dependency injection on context (we cant pass in the thing we are instantiating right away)
-    for (const service of Object.values(this.context.services)) service.context = this.context
   }
 
   async start() {
+    return await super.start(this.context)
+  }
+
+  async stop() {
+    return await super.stop(this.context)
+  }
+
+  async start_service(context: Context) {
     const promises: Promise<void>[] = []
-    for (const service of Object.values(this.context.services)) {
-      // TODO should we pass the context here, rather than this weird getter/setter?
-      promises.push(service.start())
+    for (const service of Object.values(context.services)) {
+      promises.push(service.start(this.context))
     }
 
     await Promise.all(promises)
-    console.log('App is up.')
   }
 
   status() {
     return Promise.all(Object.values(this.context.services).map(service => service.status()))
   }
 
-  async stop() {
-    for (const service of Object.values(this.context.services)) {
-      await service.stop()
+  async stop_service(context: Context) {
+    for (const service of Object.values(context.services)) {
+      await service.stop(context)
     }
   }
 }

@@ -1,4 +1,5 @@
 import { Command } from 'cliffy/command/mod.ts'
+import { Config } from './config.ts'
 import { App } from './app.ts'
 import * as dotenv from "std/dotenv/mod.ts";
 
@@ -24,7 +25,7 @@ const command = new Command()
     }
     const env_file = await dotenv.load() as typeof env_vars
 
-    const app = new App({
+    const config = new Config({
       minecraft: {
         version: args.minecraftServerVersion,
         world_name: args.minecraftWorldName
@@ -35,10 +36,17 @@ const command = new Command()
         monitor_channel: args.discordMonitorChannel ?? env_vars.DISCORD_MONITOR_CHANNEL ?? env_file.DISCORD_MONITOR_CHANNEL,
       }
     })
+    const app = new App(config)
+
+    Deno.addSignalListener('SIGINT', async () => {
+      console.log('SIGINT signal received. Stopping server...')
+      await app.stop()
+    })
+
+
     await app.start()
     await app.status()
     console.log('app is done.')
-    // TODO implement app.stop on Ctrl-C
   })
 
 await command.parse()

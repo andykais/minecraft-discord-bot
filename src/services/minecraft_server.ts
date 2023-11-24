@@ -1,9 +1,8 @@
-import { ScriptServer } from '@scriptserver/core'
 import * as fs from 'std/fs/mod.ts'
-import { useEvent } from '@scriptserver/event'
 import { Service } from './mod.ts'
 import { JavaServer, JavaEventHandler } from './java_server.ts'
 import { Config } from "../config.ts";
+import { Context } from "../app.ts";
 
 class MinecraftServerService extends Service {
   #java_server: JavaServer
@@ -13,24 +12,22 @@ class MinecraftServerService extends Service {
     this.#java_server = new JavaServer(config, this.#server_event_handler)
   }
 
-  async start() {
-    this.#java_server.context = this.context
+  async start_service(context: Context) {
     console.log(`Starting minecraft world '${this.config.minecraft.world.name}'`)
-    await this.#java_server.start()
+    await this.#java_server.start(context)
   }
 
   async status() {
     return this.#java_server.status()
   }
 
-  async stop() {
-    await this.#java_server.stop()
-    this.context.services.discord_bot.send_message('MONITOR_CHANNEL', 'Java server is down.')
+  async stop_service(context: Context) {
+    await this.#java_server.stop(context)
+    context.services.discord_bot.send_message('MONITOR_CHANNEL', 'Java server is down.')
   }
 
-  #server_event_handler: JavaEventHandler = async (event) => {
-    console.log('event:', event.type, event.data)
-    const { discord_bot } = this.context.services
+  #server_event_handler: JavaEventHandler = async (context, event) => {
+    const { discord_bot } = context.services
 
     switch(event.type) {
       case 'LOGIN': {
@@ -42,7 +39,7 @@ class MinecraftServerService extends Service {
         break
       }
       case 'STARTED': {
-        this.context.services.discord_bot.send_message('MONITOR_CHANNEL', `Minecraft server '${this.config.minecraft.world.name}' started in ${event.data.elapsed}.`)
+        discord_bot.send_message('MONITOR_CHANNEL', `Minecraft server version ${this.config.minecraft.server.version} started world '${this.config.minecraft.world.name}' in ${event.data.elapsed}.`)
         break
       }
     }
