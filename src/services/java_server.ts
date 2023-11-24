@@ -28,7 +28,7 @@ const java_server_event_regexes: Record<JavaServerEvent, RegExp> = {
   STARTED: /Done \((?<elapsed>\d+\.\d+[a-z]+)\)/,
   LOGIN: / (?<username>[^ ]*?) joined the game/,
   LOGOUT: / (?<username>[^ ]*?) left the game/,
-  WARNING: /WARNING.:(?<message>.*)/,
+  WARNING: /WARN.: (?<message>.*)/,
 }
 const java_server_event_parsers = Object.fromEntries(
   Object.entries(java_server_event_regexes).map(entry => [entry[0], line => line.match(entry[1])?.groups])
@@ -80,7 +80,7 @@ class JavaServer extends Service {
       args,
       cwd: java_config.cwd,
       stdout: 'piped',
-      stderr: 'inherit',
+      stderr: 'piped',
       stdin: 'piped',
     })
     this.#java_process = cmd.spawn()
@@ -102,13 +102,14 @@ class JavaServer extends Service {
 
     this.#promises.push(status_promise)
     this.#promises.push(this.#parse_stdout(context))
-    // this.#promises.push(this.#parse_stderr())
+    this.#promises.push(this.#parse_stderr())
 
     const result = await this.#startup_promise_controller.promise
   }
 
   async stop_service() {
     await this.#send_command('stop')
+    await this.status()
   }
 
   async #parse_stdout(context: Context) {

@@ -13,6 +13,8 @@ class MinecraftServerService extends Service {
   }
 
   async start_service(context: Context) {
+    await Deno.mkdir(this.config.minecraft.world.folder, { recursive: true })
+    await fs.copy(this.config.minecraft.resources.initialization_folder, this.config.minecraft.world.folder, { overwrite: true })
     console.log(`Starting minecraft world '${this.config.minecraft.world.name}'`)
     await this.#java_server.start(context)
   }

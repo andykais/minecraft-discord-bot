@@ -9,7 +9,7 @@ type DiscordChannelType =
 
 
 class DiscordBotService extends Service {
-  #token: string
+  #token?: string
   #activity_channel_id?: string
   #monitor_channel_id?: string
   #bot?: discord.Bot
@@ -22,15 +22,22 @@ class DiscordBotService extends Service {
 
   constructor(config: Config) {
     super(config)
-    if (config.discord?.token) this.#token = config.discord.token
-    else throw new Error('Attempted to launch discord bot service without DISCORD_TOKEN environment variable')
-    if (config.discord?.activity_channel) this.#activity_channel_id = config.discord.activity_channel.toString()
-    if (config.discord?.monitor_channel) this.#monitor_channel_id = config.discord.monitor_channel.toString()
+    if (config.discord?.token) {
+      this.#token = config.discord.token
+      if (config.discord?.activity_channel) {
+        this.#activity_channel_id = config.discord.activity_channel.toString()
+      }
+      if (config.discord?.monitor_channel) {
+        this.#monitor_channel_id = config.discord.monitor_channel.toString()
+      }
+    }
 
     this.#discord_client_promise_controller = Promise.withResolvers<void>()
   }
 
   async start_service() {
+    if (this.#token === undefined) return
+
     const startup_promise_controller = Promise.withResolvers<void>()
 
     this.#bot = discord.createBot({
@@ -47,11 +54,15 @@ class DiscordBotService extends Service {
   }
 
   async stop_service() {
+    if (this.#token === undefined) return
+
     await discord.stopBot(this.bot)
     this.#discord_client_promise_controller.resolve()
   }
 
   async status() {
+    if (this.#token === undefined) return
+
     if (!this.#bot) throw new Error('uninitialized')
     return this.#discord_client_promise_controller.promise
   }
@@ -68,6 +79,7 @@ class DiscordBotService extends Service {
         if (this.#monitor_channel_id) {
           return await this.bot.helpers.sendMessage(this.#monitor_channel_id, {content: message})
         }
+        break
       }
       default: {
         throw new Error(`Unexpected channel_type '${channel_type}'`)

@@ -16,7 +16,7 @@ const command = new Command()
       DISCORD_TOKEN?: string
       DISCORD_ACTIVITY_CHANNEL?: string
       DISCORD_MONITOR_CHANNEL?: string
-      MODE?: 'DEVELOPMENT' | 'PRODUCTION'
+      MODE?: 'development' | 'production'
     }
 
     const env_vars = {
@@ -41,7 +41,7 @@ const command = new Command()
     const app = new App(config)
 
 
-    if (env_vars.MODE !== 'DEVELOPMENT') {
+    if (env_vars.MODE !== 'development') {
       Deno.addSignalListener('SIGINT', async () => {
         console.log('SIGINT signal received. Stopping server...')
         await app.stop()

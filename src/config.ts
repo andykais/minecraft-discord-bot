@@ -24,9 +24,10 @@ class Config {
       jar_filepath: string
       version: string
     }
-    // resources: {
-    //   backups_folder: string
-    // }
+    resources: {
+      initialization_folder: string
+      // backups_folder: string
+    }
   }
   discord?: {
     token?: string
@@ -45,9 +46,10 @@ class Config {
         jar_filepath: path.fromFileUrl(import.meta.resolve('../resources/jars/minecraft-server/' + server_jar_name)),
         version: config_input.minecraft.version
       },
-      // resources: {
-      //   backups_folder: path.fromFileUrl(import.meta.resolve('../resources/backups')),
-      // }
+      resources: {
+        initialization_folder: path.fromFileUrl(import.meta.resolve('../resources/initialization'))
+        // backups_folder: path.fromFileUrl(import.meta.resolve('../resources/backups')),
+      }
     }
     this.discord = {
       token: config_input.discord.token,

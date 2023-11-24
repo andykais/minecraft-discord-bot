@@ -39,7 +39,7 @@ abstract class Service {
     }
 
     this.#set_state('STOPPING')
-    await this.start_service(context)
+    await this.stop_service(context)
     this.#set_state('STOPPED')
   }
 
