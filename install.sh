@@ -1,8 +1,12 @@
 #!/bin/bash
 
+
+set -e
+set -x
+
 # startup commands
-apt-get update
-apt-get upgrade
+apt-get update -y
+apt-get upgrade -y
 
 # deno dependencies
 apt-get install unzip
