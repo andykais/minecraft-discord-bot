@@ -89,8 +89,12 @@ class JavaServer extends Service {
 
     const status_promise = this.#java_process.status
       .then(status => {
-        console.log(status)
-        if (status.success === false) {
+        console.log('Java process exit data:', status)
+
+        if (status.code === 130 && ['STOPPING', 'STOPPED'].includes(this.state)) {
+          console.log('Java service gracefully shutdown via SIGINT.')
+        }
+        else if (status.success === false) {
           const command_str = ['java', ...args].join(' ')
           throw new Error(`Java server failed.\n${command_str}`)
         }
@@ -101,12 +105,9 @@ class JavaServer extends Service {
     // this.#promises.push(this.#parse_stderr())
 
     const result = await this.#startup_promise_controller.promise
-
-    console.log('Java server is up.')
   }
 
   async stop_service() {
-    console.log('stopping java server...')
     await this.#send_command('stop')
   }
 
@@ -144,7 +145,6 @@ class JavaServer extends Service {
   }
 
   async #send_command(command: string) {
-    console.log('sending command:', command)
     this.#stdin_writer.write(this.#stdin_encoder.encode(`/${command}\n`))
     this.#stdin_writer.releaseLock()
   }

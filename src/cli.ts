@@ -16,12 +16,14 @@ const command = new Command()
       DISCORD_TOKEN?: string
       DISCORD_ACTIVITY_CHANNEL?: string
       DISCORD_MONITOR_CHANNEL?: string
+      MODE?: 'DEVELOPMENT' | 'PRODUCTION'
     }
 
     const env_vars = {
       DISCORD_TOKEN: Deno.env.get('DISCORD_TOKEN'),
       DISCORD_ACTIVITY_CHANNEL: Deno.env.get('DISCORD_ACTIVITY_CHANNEL'),
       DISCORD_MONITOR_CHANNEL: Deno.env.get('DISCORD_MONITOR_CHANNEL'),
+      MODE: Deno.env.get('MODE'),
     }
     const env_file = await dotenv.load() as typeof env_vars
 
@@ -38,15 +40,17 @@ const command = new Command()
     })
     const app = new App(config)
 
-    Deno.addSignalListener('SIGINT', async () => {
-      console.log('SIGINT signal received. Stopping server...')
-      await app.stop()
-    })
+
+    if (env_vars.MODE === 'DEVELOPMENT') {
+      Deno.addSignalListener('SIGINT', async () => {
+        console.log('SIGINT signal received. Stopping server...')
+        await app.stop()
+      })
+    }
 
 
     await app.start()
     await app.status()
-    console.log('app is done.')
   })
 
 await command.parse()
