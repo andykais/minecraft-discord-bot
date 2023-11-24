@@ -1,6 +1,6 @@
 #!/bin/bash
 
-deno run \
+~/.deno/bin/deno run \
   --allow-read=. \
   --allow-write=. \
   --unstable \
