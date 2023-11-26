@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "develop": "MODE=development deno run --allow-read --allow-write --unstable --allow-run=git,java --allow-env=DISCORD_TOKEN,DISCORD_ACTIVITY_CHANNEL,DISCORD_MONITOR_CHANNEL --allow-net=192.168.1.1,127.0.0.1,127.0.0.0,discord.com,gateway.discord.gg,gateway-us-east1-d.discord.gg --check --watch=.env src/cli.ts"
+    "develop": "MODE=development deno run --allow-read --allow-write --unstable --allow-run=git,java --allow-env=DISCORD_TOKEN,DISCORD_ACTIVITY_CHANNEL,DISCORD_MONITOR_CHANNEL --allow-net=192.168.1.1,127.0.0.1,127.0.0.0,discord.com,gateway.discord.gg,gateway-us-east1-a.discord.gg,gateway-us-east1-b.discord.ggi,gateway-us-east1-c.discord.gg,gateway-us-east1-d.discord.gg --check --watch=.env src/cli.ts"
   },
   "imports": {
     "std/": "https://deno.land/std@0.206.0/",
