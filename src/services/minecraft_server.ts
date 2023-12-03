@@ -4,7 +4,6 @@ import { Service } from './mod.ts'
 import { JavaServer, JavaEventHandler } from './java_server.ts'
 import { Config } from "../config.ts";
 import { Context } from "../app.ts";
-import { Cron } from 'croner'
 
 interface PlayerStats {
   online: boolean
@@ -14,12 +13,13 @@ interface PlayerStats {
 
 class MinecraftServerService extends Service {
   #java_server: JavaServer
-  #cron_job: Cron | undefined
+  #cron_controller: AbortController
   #daily_player_stats: Record<string, PlayerStats>
 
   constructor(config: Config) {
     super(config)
     this.#java_server = new JavaServer(config, this.#server_event_handler)
+    this.#cron_controller = new AbortController()
     // run every day at 1am
     this.#daily_player_stats = {}
 
@@ -30,7 +30,8 @@ class MinecraftServerService extends Service {
     await fs.copy(this.config.minecraft.resources.initialization_folder, this.config.minecraft.world.folder, { overwrite: true })
     console.log(`Starting minecraft world '${this.config.minecraft.world.name}'`)
     await this.#java_server.start(context)
-    this.#cron_job = new Cron('0 8 * * * *', () => this.#daily_digest_report(context))
+    // run every day at 8am
+    Deno.cron('backup', '0 8 * * * *', () => this.#daily_digest_report(context))
   }
 
   async status() {

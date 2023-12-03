@@ -108,7 +108,7 @@ class JavaServer extends Service {
   }
 
   async stop_service() {
-    await this.#send_command('stop')
+    await this.send_command('stop')
     await this.status()
   }
 
@@ -145,7 +145,7 @@ class JavaServer extends Service {
     await this.#parent_event_handler(context, event)
   }
 
-  async #send_command(command: string) {
+  async send_command(command: string) {
     this.#stdin_writer.write(this.#stdin_encoder.encode(`/${command}\n`))
     this.#stdin_writer.releaseLock()
   }

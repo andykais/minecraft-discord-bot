@@ -15,6 +15,9 @@ interface ConfigInput {
 
 
 class Config {
+  // backups: {
+  //   folder: string
+  // }
   minecraft: {
     world: {
       name: string
