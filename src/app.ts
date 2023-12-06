@@ -39,12 +39,10 @@ class App extends Service {
   }
 
   async start_service(context: Context) {
-    const promises: Promise<void>[] = []
-    for (const service of Object.values(context.services)) {
-      promises.push(service.start(this.context))
-    }
-
-    await Promise.all(promises)
+    // TODO create a more sophisticated system of dependent services
+    await context.services.discord_bot.start(context)
+    await context.services.minecraft_server.start(context)
+    await context.services.backups.start(context)
   }
 
   status() {
@@ -52,9 +50,9 @@ class App extends Service {
   }
 
   async stop_service(context: Context) {
-    for (const service of Object.values(context.services)) {
-      await service.stop(context)
-    }
+    await context.services.backups.stop(context)
+    await context.services.minecraft_server.stop(context)
+    await context.services.discord_bot.stop(context)
   }
 }
 

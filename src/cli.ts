@@ -6,7 +6,7 @@ import * as dotenv from "std/dotenv/mod.ts";
 const command = new Command()
   .name('minecraft-suite')
   .description('A program that runs a minecraft server, pushes user activity to a discord channel, and backs up minecraft saves')
-  .option('--minecraft-server-version <server_version:string>', 'The version of minecraft-server.jar to use.', { default: '1.20.2' })
+  .option('--minecraft-server-version <server_version:string>', 'The version of minecraft-server.jar to use.', { default: '1.20.3' })
   .option('--minecraft-world-name <world_name:string>', 'The name of the minecraft world (named worlds have different saves)', { default: 'default' })
   .option('--discord-activity-channel <discord:string>', 'User activity discord channel the bot will send messages to.')
   .option('--discord-monitor-channel <discord:string>', 'Server monitoring discord channel the bot will send messages to.')
