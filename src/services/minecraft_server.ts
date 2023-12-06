@@ -100,7 +100,20 @@ class MinecraftServerService extends Service {
       }
     }
 
-    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily server digest - DAU: ${dau}, total playtime: ${total_playtime}`)
+    let total_playtime_units = 'seconds'
+    const human_readable = {
+      total_playtime: total_playtime,
+      units: 'seconds'
+    }
+    if (human_readable.total_playtime > 60) {
+      human_readable.total_playtime /= 60
+      human_readable.units = 'minutes'
+    }
+    if (human_readable.total_playtime > 60) {
+      human_readable.total_playtime /= 60
+      human_readable.units = 'hours'
+    }
+    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily server digest - DAU: ${dau}, total playtime: ${human_readable.total_playtime} ${human_readable.units}`)
     this.#daily_player_stats = tomorrows_player_stats
 
     return { dau, total_playtime }
