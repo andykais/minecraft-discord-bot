@@ -113,10 +113,9 @@ class MinecraftServerService extends Service {
       human_readable.total_playtime /= 60
       human_readable.units = 'hours'
     }
-    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily server digest - DAU: ${dau}, total playtime: ${human_readable.total_playtime} ${human_readable.units}`)
     this.#daily_player_stats = tomorrows_player_stats
 
-    return { dau, total_playtime }
+    return { dau, total_playtime: `${human_readable.total_playtime} ${human_readable.units}` }
   }
 
   public async toggle_server_persistance(toggle: 'on' | 'off') {

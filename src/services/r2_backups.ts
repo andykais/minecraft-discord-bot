@@ -98,7 +98,7 @@ class R2Backups extends Service {
     const end_time = performance.now()
 
     const duration = (end_time - start_time) / 1000
-    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Backup complete (elapsed time ${Math.ceil(duration)} seconds)`)
+    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily backup complete (elapsed time ${Math.ceil(duration)} seconds, dau ${daily_digest.dau}, total playtime ${daily_digest.total_playtime})`)
   }
 
   protected async stop_service(context: Context): Promise<void> {
