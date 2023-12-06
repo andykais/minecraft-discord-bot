@@ -1,10 +1,12 @@
 {
   "tasks": {
-    "develop": "MODE=development deno run --allow-read --allow-write --unstable --allow-run=git,java --allow-env=HOME,NODE_EXTRA_CA_CERTS,MODE,DISCORD_TOKEN,DISCORD_ACTIVITY_CHANNEL,DISCORD_MONITOR_CHANNEL --allow-net=169.254.169.254,192.168.1.1,127.0.0.1,127.0.0.0,discord.com,gateway.discord.gg,gateway-us-east1-a.discord.gg,gateway-us-east1-b.discord.ggi,gateway-us-east1-c.discord.gg,gateway-us-east1-d.discord.gg --check --watch=.env src/cli.ts"
+    "develop": "MODE=development deno run --allow-read --allow-write --unstable --allow-run=git,java --allow-env=HOME,NODE_EXTRA_CA_CERTS,MODE,DISCORD_TOKEN,DISCORD_ACTIVITY_CHANNEL,DISCORD_MONITOR_CHANNEL,AWS_REGION,R2_ACCOUNT_ID,R2_BUCKET,R2_ACCESS_KEY_ID,R2_ACCESS_KEY_SECRET --allow-net=169.254.169.254,192.168.1.1,127.0.0.1,127.0.0.0,discord.com,gateway.discord.gg,gateway-us-east1-a.discord.gg,gateway-us-east1-b.discord.ggi,gateway-us-east1-c.discord.gg,gateway-us-east1-d.discord.gg --check --watch=.env src/cli.ts"
   },
   "imports": {
     "std/": "https://deno.land/std@0.206.0/",
     "cliffy/": "https://deno.land/x/cliffy@v1.0.0-rc.3/",
-    "discordeno": "https://deno.land/x/discordeno@18.0.0/mod.ts"
+    "discordeno": "https://deno.land/x/discordeno@18.0.0/mod.ts",
+    "aws_api/": "https://deno.land/x/aws_api@v0.8.1/",
+    "event": "https://deno.land/x/event@2.0.1/mod.ts"
   }
 }

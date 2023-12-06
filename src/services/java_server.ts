@@ -1,4 +1,5 @@
 import * as streams from 'std/streams/mod.ts'
+import { EventEmitter } from 'event'
 import { Config } from '../config.ts'
 import { Context } from '../app.ts'
 import { Service } from './mod.ts'
@@ -17,22 +18,27 @@ interface JavaServerEvents {
   LOGIN: { username: string }
   LOGOUT: { username: string }
   WARNING: { message: string }
-}
-type JavaServerEvent = keyof JavaServerEvents
-type JavaServerEventParsers = {
-  [E in keyof JavaServerEvents]: (line: string) => JavaServerEvents[E] | undefined
+  SAVE_ON: {}
+  SAVE_OFF: {}
+  SAVE_ALL: {}
 }
 type EventPayload = ValueOf<Mapper<JavaServerEvents>>
 
-const java_server_event_regexes: Record<JavaServerEvent, RegExp> = {
+const java_server_event_regexes: Record<keyof JavaServerEvents, RegExp> = {
   STARTED: /Done \((?<elapsed>\d+\.\d+[a-z]+)\)/,
   LOGIN: / (?<username>[^ ]*?) joined the game/,
   LOGOUT: / (?<username>[^ ]*?) left the game/,
   WARNING: /WARN.: (?<message>.*)/,
+  SAVE_OFF: /Automatic saving is now disabled|Saving is already turned off/,
+  SAVE_ALL: /Saved the game/,
+  SAVE_ON: /Automatic saving is now enabled|Saving is already turned on/
 }
-const java_server_event_parsers = Object.fromEntries(
-  Object.entries(java_server_event_regexes).map(entry => [entry[0], line => line.match(entry[1])?.groups])
-) as JavaServerEventParsers
+
+type JavaServerEventEmitterType = {
+  [K in keyof JavaServerEvents]: [JavaServerEvents[K]]
+}
+
+class JavaServerEventEmitter extends EventEmitter<JavaServerEventEmitterType> {}
 
 
 type JavaEventHandler = (context: Context, event: EventPayload) => void
@@ -40,10 +46,10 @@ type JavaEventHandler = (context: Context, event: EventPayload) => void
 
 class JavaServer extends Service {
   #java_process: Deno.ChildProcess | undefined
-  #java_process_stdin_writer: WritableStreamDefaultWriter<Uint8Array> | undefined
   #stdin_encoder = new TextEncoder()
   #promises: Promise<any>[] = []
   #startup_promise_controller = Promise.withResolvers<{elapsed: string}>()
+  #emitter: JavaServerEventEmitter
   #parent_event_handler: JavaEventHandler
 
   get #server() {
@@ -51,14 +57,10 @@ class JavaServer extends Service {
     throw new Error('uninitialized')
   }
 
-  get #stdin_writer() {
-    if (this.#java_process_stdin_writer) return this.#java_process_stdin_writer
-    throw new Error('uninitialized')
-  }
-
   constructor(config: Config, event_handler: JavaEventHandler) {
     super(config)
     this.#parent_event_handler = event_handler
+    this.#emitter = new JavaServerEventEmitter()
   }
 
   status() { return Promise.all(this.#promises) }
@@ -84,7 +86,6 @@ class JavaServer extends Service {
       stdin: 'piped',
     })
     this.#java_process = cmd.spawn()
-    this.#java_process_stdin_writer = this.#server.stdin.getWriter()
 
 
     const status_promise = this.#java_process.status
@@ -119,9 +120,12 @@ class JavaServer extends Service {
 
     for await (const line of stdout_stream) {
       console.log(line)
-      for (const [event, regex_parser] of Object.entries(java_server_event_parsers) as Entries<JavaServerEventParsers>) {
-        const result = regex_parser(line)
-        if (result) this.#handle_event(context, { type: event, data: result } as EventPayload)
+      for (const [event, regex] of Object.entries(java_server_event_regexes)) {
+        const match = line.match(regex)
+        if (match) {
+          const result = match.groups ?? {}
+          this.#handle_event(context, { type: event, data: result } as EventPayload)
+        }
       }
     }
   }
@@ -133,21 +137,41 @@ class JavaServer extends Service {
     for await (const line of stderr_stream) {
       console.error(line)
     }
-    // const stderr_output = await streams.toText(
-    //   this.#server.stderr
-    //     .pipeThrough(new TextDecoderStream())
-    // )
-
   }
 
   async #handle_event(context: Context, event: EventPayload) {
+    console.log('JavaServer event', event)
+    this.#emitter.emit(event.type, event.data)
     if (event.type === 'STARTED') this.#startup_promise_controller.resolve(event.data)
     await this.#parent_event_handler(context, event)
   }
 
   async send_command(command: string) {
-    this.#stdin_writer.write(this.#stdin_encoder.encode(`/${command}\n`))
-    this.#stdin_writer.releaseLock()
+    console.log('JavaServer::send_command', {command})
+    const stdin_writer = this.#server.stdin.getWriter()
+    stdin_writer.write(this.#stdin_encoder.encode(`/${command}\n`))
+    stdin_writer.releaseLock()
+  }
+
+  async save_on() {
+    await this.send_command('save-on')
+    await new Promise(resolve => {
+      this.#emitter.once('SAVE_ON', resolve)
+    })
+  }
+
+  async save_off() {
+    await this.send_command('save-off')
+    await new Promise(resolve => {
+      this.#emitter.once('SAVE_OFF', resolve)
+    })
+  }
+
+  async save_all() {
+    await this.send_command('save-all')
+    await new Promise(resolve => {
+      this.#emitter.once('SAVE_ALL', resolve)
+    })
   }
 }
 

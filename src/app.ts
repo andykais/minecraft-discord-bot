@@ -41,9 +41,6 @@ class App extends Service {
   async start_service(context: Context) {
     const promises: Promise<void>[] = []
     for (const service of Object.values(context.services)) {
-      if (service instanceof R2Backups === false) {
-        continue
-      }
       promises.push(service.start(this.context))
     }
 

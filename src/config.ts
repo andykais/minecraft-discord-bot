@@ -11,13 +11,18 @@ interface ConfigInput {
     activity_channel?: string
     monitor_channel?: string
   }
+  r2_backup: {
+    account_id?: string
+    bucket?: string
+    credentials: {
+      access_key_id?: string
+      secret_access_key?: string
+    }
+  }
 }
 
 
 class Config {
-  // backups: {
-  //   folder: string
-  // }
   minecraft: {
     world: {
       name: string
@@ -36,6 +41,19 @@ class Config {
     token?: string
     activity_channel?: bigint
     monitor_channel?: bigint
+  }
+  r2_backup?: {
+    account_id: string
+    base_url: string
+    bucket: string
+    credentials: {
+      access_key_id: string
+      secret_access_key: string
+    }
+    resources: {
+      local_folder: string
+      remote_folder: string
+    }
   }
 
   constructor(config_input: ConfigInput) {
@@ -62,6 +80,23 @@ class Config {
     }
     if (config_input.discord.monitor_channel) {
       this.discord.monitor_channel = BigInt(config_input.discord.monitor_channel)
+    }
+
+    const { r2_backup } = config_input
+    if (r2_backup.account_id && r2_backup.bucket && r2_backup.credentials.access_key_id && r2_backup.credentials.secret_access_key) {
+      this.r2_backup = {
+        account_id: r2_backup.account_id,
+        base_url: `https://${r2_backup.account_id}.r2.cloudflarestorage.com`,
+        bucket: r2_backup.bucket,
+        credentials: {
+          access_key_id: r2_backup.credentials.access_key_id,
+          secret_access_key: r2_backup.credentials.secret_access_key,
+        },
+        resources: {
+          local_folder: path.fromFileUrl(import.meta.resolve('../resources/backups/' + config_input.minecraft.world_name)),
+          remote_folder: `worlds/${config_input.minecraft.world_name}`,
+        }
+      }
     }
   }
 }
