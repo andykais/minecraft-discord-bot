@@ -27,21 +27,21 @@ class R2Backups extends Service {
     // // run every day at 8am (thats 1pm UTC)
     this.#cron_promise = Deno.cron('backup', '0 13 * * *', () => this.daily_backup(context), { signal: this.#cron_controller.signal })
 
-    if (context.config.r2_backup) {
+    if (context.config.backup.r2) {
       this.#s3_client = new aws_api.ApiFactory({
         credentials: {
           region: 'auto',
-          awsAccessKeyId: backup_config.credentials.accessKeyId,
-          awsSecretKey: backup_config.credentials.secretAccessKey,
+          awsAccessKeyId: context.config.backup.r2.credentials.access_key_id,
+          awsSecretKey: context.config.backup.r2.credentials.secret_access_key,
         },
-        fixedEndpoint: backup_config.base_url,
+        fixedEndpoint: context.config.backup.r2.base_url,
       }).makeNew(S3);
 
       // simple call to confirm the credentials work
-      const objects = await this.#s3.listObjects({Bucket: context.config.r2_backup.bucket })
-      if (objects.Name !== context.config.r2_backup.bucket) {
+      const objects = await this.#s3.listObjects({Bucket: context.config.backup.r2.bucket })
+      if (objects.Name !== context.config.backup.r2.bucket) {
         console.error(objects)
-        throw new Error(`Invalid bucket ${objects.Name} retrieved for bucket ${context.config.r2_backup.bucket}`)
+        throw new Error(`Invalid bucket ${objects.Name} retrieved for bucket ${context.config.backup.r2.bucket}`)
       }
     }
   }
@@ -60,8 +60,8 @@ class R2Backups extends Service {
     const backup_datetime = datetime.format(new Date(), 'yyyy-MM-dd HH:mm')
     console.log(`Daily backup triggered ${backup_datetime}`)
 
-    const archive_filepath = path.join(backup_config.resources.folder, backup_datetime, 'world.tar')
-    const r2_key = path.relative(Deno.cwd(), archive_filepath)
+    const archive_filepath = path.join(context.config.backup.resources.local_folder, backup_datetime, 'world.tar')
+    const r2_key = path.join(context.config.backup.resources.remote_folder, backup_datetime, 'world.tar')
 
     const daily_digest = await context.services.minecraft_server.daily_digest_report(context)
     if (daily_digest.dau === 0) {
@@ -88,7 +88,7 @@ class R2Backups extends Service {
       console.log(`Uploading ${archive_file_size}MB backup to S3`)
       const archive_contents = await Deno.readFile(archive_filepath)
       const put_result = await this.#s3.putObject({
-        Bucket: backup_config.bucket,
+        Bucket: context.config.backup.r2!.bucket,
         Key: r2_key,
         Body: archive_contents,
       })
