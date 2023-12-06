@@ -4,7 +4,6 @@ import { Service } from './mod.ts'
 import { JavaServer, JavaEventHandler } from './java_server.ts'
 import { Config } from "../config.ts";
 import { Context } from "../app.ts";
-import { Cron } from 'croner'
 
 interface PlayerStats {
   online: boolean
@@ -14,7 +13,6 @@ interface PlayerStats {
 
 class MinecraftServerService extends Service {
   #java_server: JavaServer
-  #cron_job: Cron | undefined
   #daily_player_stats: Record<string, PlayerStats>
 
   constructor(config: Config) {
@@ -30,7 +28,6 @@ class MinecraftServerService extends Service {
     await fs.copy(this.config.minecraft.resources.initialization_folder, this.config.minecraft.world.folder, { overwrite: true })
     console.log(`Starting minecraft world '${this.config.minecraft.world.name}'`)
     await this.#java_server.start(context)
-    this.#cron_job = new Cron('0 8 * * * *', () => this.#daily_digest_report(context))
   }
 
   async status() {
@@ -47,7 +44,7 @@ class MinecraftServerService extends Service {
 
     switch(event.type) {
       case 'LOGIN': {
-        this.#update_player_stats(event.data.username, 'LOGOUT')
+        this.#update_player_stats(event.data.username, 'LOGIN')
         discord_bot.send_message('ACTIVITY_CHANNEL', `${event.data.username} has logged in`)
         break
       }
@@ -69,6 +66,7 @@ class MinecraftServerService extends Service {
   #update_player_stats(username: string, event: 'LOGIN' | 'LOGOUT') {
     const now = new Date()
     const player_stats = this.#daily_player_stats[username] ?? {online: true, last_login_at: now, playtime: 0}
+    this.#daily_player_stats[username] = player_stats
     switch(event) {
       case 'LOGIN': {
         player_stats.last_login_at = now
@@ -84,7 +82,7 @@ class MinecraftServerService extends Service {
     }
   }
 
-  #daily_digest_report = (context: Context) => {
+  async daily_digest_report(context: Context) {
     const tomorrows_player_stats: Record<string, PlayerStats> = {}
 
     const now = new Date()
@@ -104,6 +102,17 @@ class MinecraftServerService extends Service {
 
     context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily server digest - DAU: ${dau}, total playtime: ${total_playtime}`)
     this.#daily_player_stats = tomorrows_player_stats
+
+    return { dau, total_playtime }
+  }
+
+  public async toggle_server_persistance(toggle: 'on' | 'off') {
+    if (toggle === 'on') {
+      await this.#java_server.save_on()
+    } else {
+      await this.#java_server.save_off()
+      await this.#java_server.save_all()
+    }
   }
 }
 

@@ -68,6 +68,7 @@ class DiscordBotService extends Service {
   }
 
   async send_message(channel_type: DiscordChannelType, message: string) {
+    console.log('DiscordBot::send_message', {channel_type, message})
     switch(channel_type) {
       case 'ACTIVITY_CHANNEL': {
         if (this.#activity_channel_id) {

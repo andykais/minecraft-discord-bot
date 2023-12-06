@@ -17,15 +17,25 @@ const command = new Command()
       DISCORD_ACTIVITY_CHANNEL?: string
       DISCORD_MONITOR_CHANNEL?: string
       MODE?: 'development' | 'production'
+      R2_ACCOUNT_ID?: string
+      R2_BUCKET?: string
+      R2_ACCESS_KEY_ID?: string
+      R2_ACCESS_KEY_SECRET?: string
     }
 
-    const env_vars = {
+    const env_vars: EnvVars = {
       DISCORD_TOKEN: Deno.env.get('DISCORD_TOKEN'),
       DISCORD_ACTIVITY_CHANNEL: Deno.env.get('DISCORD_ACTIVITY_CHANNEL'),
       DISCORD_MONITOR_CHANNEL: Deno.env.get('DISCORD_MONITOR_CHANNEL'),
-      MODE: Deno.env.get('MODE'),
+      MODE: Deno.env.get('MODE') as EnvVars['MODE'],
+      R2_ACCOUNT_ID: Deno.env.get('R2_ACCOUNT_ID'),
+      R2_BUCKET: Deno.env.get('R2_BUCKET'),
+      R2_ACCESS_KEY_ID: Deno.env.get('R2_ACCESS_KEY_ID'),
+      R2_ACCESS_KEY_SECRET: Deno.env.get('R2_ACCESS_KEY_SECRET'),
     }
     const env_file = await dotenv.load() as typeof env_vars
+
+    Object.assign(env_vars, env_file)
 
     const config = new Config({
       minecraft: {
@@ -36,6 +46,14 @@ const command = new Command()
         token: env_vars.DISCORD_TOKEN ?? env_file.DISCORD_TOKEN,
         activity_channel: args.discordActivityChannel ?? env_vars.DISCORD_ACTIVITY_CHANNEL ?? env_file.DISCORD_ACTIVITY_CHANNEL,
         monitor_channel: args.discordMonitorChannel ?? env_vars.DISCORD_MONITOR_CHANNEL ?? env_file.DISCORD_MONITOR_CHANNEL,
+      },
+      r2_backup: {
+        account_id: env_vars.R2_ACCOUNT_ID,
+        bucket: env_vars.R2_BUCKET,
+        credentials: {
+          access_key_id: env_vars.R2_ACCESS_KEY_ID,
+          secret_access_key: env_vars.R2_ACCESS_KEY_SECRET,
+        }
       }
     })
     const app = new App(config)

@@ -2,6 +2,7 @@ import { Config } from './config.ts'
 import { Service } from "./services/mod.ts"
 import { DiscordBotService } from "./services/discord_bot.ts"
 import { MinecraftServerService } from "./services/minecraft_server.ts"
+import { R2Backups } from "./services/r2_backups.ts"
 
 
 interface Context {
@@ -9,6 +10,7 @@ interface Context {
   services: {
     discord_bot: DiscordBotService
     minecraft_server: MinecraftServerService
+    backups: R2Backups
   }
 }
 
@@ -23,6 +25,7 @@ class App extends Service {
       services: {
         discord_bot: new DiscordBotService(config),
         minecraft_server: new MinecraftServerService(config),
+        backups: new R2Backups(config),
       }
     }
   }

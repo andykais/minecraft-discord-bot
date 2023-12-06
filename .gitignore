@@ -5,3 +5,4 @@
 scratchwork
 # deno task develop world
 resources/worlds/default
+resources/backups
