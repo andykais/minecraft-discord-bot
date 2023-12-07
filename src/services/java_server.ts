@@ -105,7 +105,7 @@ class JavaServer extends Service {
     this.#promises.push(this.#parse_stderr())
 
     await new Promise(resolve => {
-      this.#emitter.once('STARTED')
+      this.#emitter.once('STARTED', resolve)
     })
   }
 
