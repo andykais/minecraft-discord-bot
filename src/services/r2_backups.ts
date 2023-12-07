@@ -82,7 +82,6 @@ class R2Backups extends Service {
     await streams.readableStreamFromReader(tar.getReader())
       .pipeThrough(new CompressionStream('gzip'))
       .pipeTo(archive_file.writable)
-    await context.services.minecraft_server.toggle_server_persistance('on')
     console.log(`Saved ${archive_filepath} to disk.`)
     const archive_file_stats = await Deno.stat(archive_filepath)
     const archive_file_size = (archive_file_stats.size / 1e6).toFixed(2)
@@ -98,6 +97,7 @@ class R2Backups extends Service {
       console.log(`Uploaded ${r2_key} to R2.`)
     }
     await context.services.minecraft_server.start(context)
+    await context.services.minecraft_server.toggle_server_persistance('on')
 
     const end_time = performance.now()
 
