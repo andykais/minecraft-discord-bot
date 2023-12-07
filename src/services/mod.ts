@@ -7,6 +7,7 @@ type ServiceState =
   | 'STARTED'
   | 'STOPPING'
   | 'STOPPED'
+  | 'ERRORED'
 
 
 // TODO possibly overkill, but we could introduce the concept of 'nested services'.
@@ -24,7 +25,7 @@ abstract class Service {
   }
 
   public async start(context: Context) {
-    if (this.state !== 'CREATED') {
+    if (['CREATED', 'STOPPED'].includes(this.state) === false) {
       throw new Error(`Services can only be started from the CREATED state. Service ${this.name} is currently ${this.state}.`)
     }
 
@@ -43,7 +44,15 @@ abstract class Service {
     this.#set_state('STOPPED')
   }
 
-  public abstract status(): Promise<any>
+  public async status() {
+    try {
+      await this.service_status()
+    } catch (e) {
+      this.#set_state('ERRORED')
+      throw e
+    }
+  }
+  protected abstract service_status(): Promise<any>
   protected abstract start_service(context: Context): Promise<any>
   protected abstract stop_service(context: Context): Promise<void>
 

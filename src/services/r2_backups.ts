@@ -61,7 +61,7 @@ class R2Backups extends Service {
     console.log(`Daily backup triggered ${backup_datetime}`)
 
     const archive_filepath = path.join(context.config.backup.resources.local_folder, backup_datetime, 'world.tar')
-    const r2_key = path.join(context.config.backup.resources.remote_folder, backup_datetime, 'world.tar')
+    const r2_key = path.join(context.config.backup.resources.remote_folder, backup_datetime, 'world.tar.gz')
 
     const daily_digest = await context.services.minecraft_server.daily_digest_report(context)
     if (daily_digest.dau === 0) {
@@ -70,6 +70,7 @@ class R2Backups extends Service {
     }
 
     await context.services.minecraft_server.toggle_server_persistance('off')
+    await context.services.minecraft_server.stop(context)
     const tar = new Tar()
     for await (const file of fs.walk(this.config.minecraft.world.folder)) {
       if (file.isFile === false) continue
@@ -78,13 +79,16 @@ class R2Backups extends Service {
     }
     await Deno.mkdir(path.dirname(archive_filepath), { recursive: true })
     const archive_file = await Deno.open(archive_filepath, { write: true, create: true })
-    await Deno.copy(tar.getReader(), archive_file)
+    await streams.readableStreamFromReader(tar.getReader())
+      .pipeThrough(new CompressionStream('gzip'))
+      .pipeTo(archive_file.writable)
+    await context.services.minecraft_server.start(context)
     await context.services.minecraft_server.toggle_server_persistance('on')
     console.log(`Saved ${archive_filepath} to disk.`)
+    const archive_file_stats = await Deno.stat(archive_filepath)
+    const archive_file_size = (archive_file_stats.size / 1e6).toFixed(2)
 
     if (this.#s3_client) {
-      const archive_file_stats = await Deno.stat(archive_filepath)
-      const archive_file_size = (archive_file_stats.size / 1e6).toFixed(2)
       console.log(`Uploading ${archive_file_size}MB backup to S3`)
       const archive_contents = await Deno.readFile(archive_filepath)
       const put_result = await this.#s3.putObject({
@@ -98,14 +102,14 @@ class R2Backups extends Service {
     const end_time = performance.now()
 
     const duration = (end_time - start_time) / 1000
-    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily backup complete (elapsed time ${Math.ceil(duration)} seconds, dau ${daily_digest.dau}, total playtime ${daily_digest.total_playtime})`)
+    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily backup of ${archive_file_size}MB world.tar.gz completed in ${Math.ceil(duration)} seconds. DAU: ${daily_digest.dau}. Total playtime: ${daily_digest.total_playtime})`)
   }
 
   protected async stop_service(context: Context): Promise<void> {
     this.#cron_controller.abort('stopped')
   }
 
-  public async status(): Promise<any> {
+  public async service_status(): Promise<any> {
     return Promise.all([
       this.#cron_promise,
       ...this.#backup_promises,

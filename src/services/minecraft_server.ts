@@ -30,13 +30,13 @@ class MinecraftServerService extends Service {
     await this.#java_server.start(context)
   }
 
-  async status() {
+  async service_status() {
     return this.#java_server.status()
   }
 
   async stop_service(context: Context) {
     await this.#java_server.stop(context)
-    context.services.discord_bot.send_message('MONITOR_CHANNEL', 'Java server is down.')
+    context.services.discord_bot.send_message('MONITOR_CHANNEL', 'Minecraft server has been turned off.')
   }
 
   #server_event_handler: JavaEventHandler = async (context, event) => {

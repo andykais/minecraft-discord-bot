@@ -60,7 +60,7 @@ class DiscordBotService extends Service {
     this.#discord_client_promise_controller.resolve()
   }
 
-  async status() {
+  async service_status() {
     if (this.#token === undefined) return
 
     if (!this.#bot) throw new Error('uninitialized')

@@ -45,14 +45,21 @@ class App extends Service {
     await context.services.backups.start(context)
   }
 
-  status() {
-    return Promise.all(Object.values(this.context.services).map(service => service.status()))
+  async service_status() {
+    try {
+      await Promise.all(Object.values(this.context.services).map(service => service.status()))
+    } catch (e) {
+      console.log(`A service failure occurred ${e}. Stopping services`)
+      await this.stop_service(this.context)
+      await Promise.allSettled(Object.values(this.context.services).map(service => service.status()))
+      throw e
+    }
   }
 
   async stop_service(context: Context) {
-    await context.services.backups.stop(context)
-    await context.services.minecraft_server.stop(context)
-    await context.services.discord_bot.stop(context)
+    if (context.services.backups.state !== 'ERRORED') await context.services.backups.stop(context)
+    if (context.services.backups.state !== 'ERRORED') await context.services.minecraft_server.stop(context)
+    if (context.services.backups.state !== 'ERRORED') await context.services.discord_bot.stop(context)
   }
 }
 

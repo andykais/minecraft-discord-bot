@@ -63,7 +63,7 @@ class JavaServer extends Service {
     this.#emitter = new JavaServerEventEmitter()
   }
 
-  status() { return Promise.all(this.#promises) }
+  service_status() { return Promise.all(this.#promises) }
 
   async start_service(context: Context) {
     const java_config = {
