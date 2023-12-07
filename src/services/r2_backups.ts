@@ -58,7 +58,7 @@ class R2Backups extends Service {
     const start_time = performance.now()
 
     const backup_datetime = datetime.format(new Date(), 'yyyy-MM-dd HH:mm')
-    console.log(`Daily backup triggered ${backup_datetime}`)
+    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily backup triggered ${backup_datetime}. Minecraft server will be turned off temporarily for a few minutes.`)
 
     const archive_filepath = path.join(context.config.backup.resources.local_folder, backup_datetime, 'world.tar')
     const r2_key = path.join(context.config.backup.resources.remote_folder, backup_datetime, 'world.tar.gz')
@@ -82,7 +82,6 @@ class R2Backups extends Service {
     await streams.readableStreamFromReader(tar.getReader())
       .pipeThrough(new CompressionStream('gzip'))
       .pipeTo(archive_file.writable)
-    await context.services.minecraft_server.start(context)
     await context.services.minecraft_server.toggle_server_persistance('on')
     console.log(`Saved ${archive_filepath} to disk.`)
     const archive_file_stats = await Deno.stat(archive_filepath)
@@ -98,6 +97,7 @@ class R2Backups extends Service {
       })
       console.log(`Uploaded ${r2_key} to R2.`)
     }
+    await context.services.minecraft_server.start(context)
 
     const end_time = performance.now()
 
