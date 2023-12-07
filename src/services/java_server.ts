@@ -48,7 +48,6 @@ class JavaServer extends Service {
   #java_process: Deno.ChildProcess | undefined
   #stdin_encoder = new TextEncoder()
   #promises: Promise<any>[] = []
-  #startup_promise_controller = Promise.withResolvers<{elapsed: string}>()
   #emitter: JavaServerEventEmitter
   #parent_event_handler: JavaEventHandler
 
@@ -105,7 +104,9 @@ class JavaServer extends Service {
     this.#promises.push(this.#parse_stdout(context))
     this.#promises.push(this.#parse_stderr())
 
-    const result = await this.#startup_promise_controller.promise
+    await new Promise(resolve => {
+      this.#emitter.once('STARTED')
+    })
   }
 
   async stop_service() {
@@ -142,7 +143,6 @@ class JavaServer extends Service {
   async #handle_event(context: Context, event: EventPayload) {
     console.log('JavaServer event', event)
     this.#emitter.emit(event.type, event.data)
-    if (event.type === 'STARTED') this.#startup_promise_controller.resolve(event.data)
     await this.#parent_event_handler(context, event)
   }
 
