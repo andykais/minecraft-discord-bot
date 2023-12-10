@@ -58,7 +58,6 @@ class R2Backups extends Service {
     const start_time = performance.now()
 
     const backup_datetime = datetime.format(new Date(), 'yyyy-MM-dd HH:mm')
-    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily backup triggered ${backup_datetime}. Minecraft server will be turned off temporarily for a few minutes.`)
 
     const archive_filepath = path.join(context.config.backup.resources.local_folder, backup_datetime, 'world.tar')
     const r2_key = path.join(context.config.backup.resources.remote_folder, backup_datetime, 'world.tar.gz')
@@ -68,6 +67,7 @@ class R2Backups extends Service {
       console.log('No active users today, so skipping backup')
       return
     }
+    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily backup triggered ${backup_datetime}. Minecraft server will be turned off temporarily for a few minutes.`)
 
     await context.services.minecraft_server.toggle_server_persistance('off')
     await context.services.minecraft_server.stop(context)

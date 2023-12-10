@@ -35,6 +35,7 @@ class MinecraftServerService extends Service {
   }
 
   async stop_service(context: Context) {
+    this.#java_server.send_command('say', 'Server will shut down momentarily.')
     await this.#java_server.stop(context)
     context.services.discord_bot.send_message('MONITOR_CHANNEL', 'Minecraft server has been turned off.')
   }

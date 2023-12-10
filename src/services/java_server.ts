@@ -146,10 +146,13 @@ class JavaServer extends Service {
     await this.#parent_event_handler(context, event)
   }
 
-  async send_command(command: string) {
-    console.log('JavaServer::send_command', {command})
+  async send_command(command: string, message?: string) {
+    let command_str = `/${command}`
+    if (message) command_str += ' ' + message
+    command_str += '\n'
+    console.log('JavaServer::send_command', {command: command_str})
     const stdin_writer = this.#server.stdin.getWriter()
-    stdin_writer.write(this.#stdin_encoder.encode(`/${command}\n`))
+    stdin_writer.write(this.#stdin_encoder.encode(command_str))
     stdin_writer.releaseLock()
   }
 
