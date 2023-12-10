@@ -116,7 +116,7 @@ class MinecraftServerService extends Service {
     }
     this.#daily_player_stats = tomorrows_player_stats
 
-    return { dau, total_playtime: `${human_readable.total_playtime} ${human_readable.units}` }
+    return { dau, total_playtime: `${human_readable.total_playtime.toFixed(2)} ${human_readable.units}` }
   }
 
   public async toggle_server_persistance(toggle: 'on' | 'off') {

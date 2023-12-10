@@ -2,6 +2,7 @@ import * as streams from 'std/streams/mod.ts'
 import * as path from 'std/path/mod.ts'
 import * as fs from 'std/fs/mod.ts'
 import * as datetime from 'std/datetime/mod.ts'
+import * as bytes from 'std/bytes/mod.ts'
 import { Tar } from 'std/archive/tar.ts'
 import * as aws_api from 'aws_api/client/mod.ts'
 import { S3 } from 'aws_api/services/s3/mod.ts'
@@ -38,7 +39,7 @@ class R2Backups extends Service {
       }).makeNew(S3);
 
       // simple call to confirm the credentials work
-      const objects = await this.#s3.listObjects({Bucket: context.config.backup.r2.bucket })
+      const objects = await this.#s3_client.listObjects({Bucket: context.config.backup.r2.bucket })
       if (objects.Name !== context.config.backup.r2.bucket) {
         console.error(objects)
         throw new Error(`Invalid bucket ${objects.Name} retrieved for bucket ${context.config.backup.r2.bucket}`)
@@ -88,12 +89,48 @@ class R2Backups extends Service {
 
     if (this.#s3_client) {
       console.log(`Uploading ${archive_file_size}MB backup to S3`)
-      const archive_contents = await Deno.readFile(archive_filepath)
-      const put_result = await this.#s3.putObject({
+      const archive_file = await Deno.open(archive_filepath, { read: true })
+      const multipart = await this.#s3_client.createMultipartUpload({
         Bucket: context.config.backup.r2!.bucket,
         Key: r2_key,
-        Body: archive_contents,
       })
+
+      const UPLOAD_CHUNK_SIZE = 1e6 * 20 // 20Mb chunks
+      let buffers = []
+      let buffers_size = 0
+      let part_number = 1
+      const parts: { ETag: string; PartNumber: number }[] = []
+
+      function upload_part() {
+        const buffer = bytes.concat(...buffers)
+        console.log(`Uploading part ${part_number} of size ${(buffer.length / 1e6).toFixed(2)}Mb`)
+        buffers = []
+        buffers_size = 0
+        const part_result = await this.#s3_client.uploadPart({
+          Bucket: context.config.backup.r2!.bucket,
+          Key: r2_key,
+          UploadId: multipart.UploadId!,
+          PartNumber: part_number,
+          Body: buffer,
+        })
+        parts.push({ ETag: part_result.ETag!, PartNumber: part_number })
+        part_number += 1
+      }
+
+      for await (const chunk of archive_file.readable) {
+        buffers.push(chunk)
+        buffers_size += chunk.length
+        if (buffers_size >= UPLOAD_CHUNK_SIZE) await upload_part()
+      }
+      if (buffers_size >= UPLOAD_CHUNK_SIZE) await upload_part()
+
+      const result = this.#s3_client.completeMultipartUpload({
+        Bucket: context.config.backup.r2!.bucket,
+        Key: r2_key,
+        UploadId: multipart.UploadId!,
+        MultipartUpload: {Parts: parts},
+      })
+
       console.log(`Uploaded ${r2_key} to R2.`)
     }
     await context.services.minecraft_server.start(context)
@@ -102,7 +139,7 @@ class R2Backups extends Service {
     const end_time = performance.now()
 
     const duration = (end_time - start_time) / 1000
-    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily backup of ${archive_file_size}MB world.tar.gz completed in ${Math.ceil(duration)} seconds. DAU: ${daily_digest.dau}. Total playtime: ${daily_digest.total_playtime.toFixed(2)})`)
+    context.services.discord_bot.send_message('MONITOR_CHANNEL', `Daily backup of ${archive_file_size}MB world.tar.gz completed in ${Math.ceil(duration)} seconds. DAU: ${daily_digest.dau}. Total playtime: ${daily_digest.total_playtime})`)
   }
 
   protected async stop_service(context: Context): Promise<void> {
@@ -114,11 +151,6 @@ class R2Backups extends Service {
       this.#cron_promise,
       ...this.#backup_promises,
     ])
-  }
-
-  get #s3() {
-    if (this.#s3_client) return this.#s3_client
-    else throw new Error('uninitialized')
   }
 }
 
