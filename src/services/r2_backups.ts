@@ -122,7 +122,7 @@ class R2Backups extends Service {
         buffers_size += chunk.length
         if (buffers_size >= UPLOAD_CHUNK_SIZE) await upload_part()
       }
-      if (buffers_size >= UPLOAD_CHUNK_SIZE) await upload_part()
+      if (buffers_size) await upload_part()
 
       const result = this.#s3_client.completeMultipartUpload({
         Bucket: context.config.backup.r2!.bucket,
