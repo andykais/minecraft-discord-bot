@@ -98,12 +98,14 @@ class R2Backups extends Service {
       const UPLOAD_CHUNK_SIZE = 1e6 * 20 // 20Mb chunks
       let buffers: Uint8Array[] = []
       let buffers_size = 0
+      let total_size = 0
       let part_number = 1
       const parts: { ETag: string; PartNumber: number }[] = []
 
       const upload_part = async () => {
         const buffer = bytes.concat(...buffers)
-        console.log(`Uploading part ${part_number} of size ${(buffer.length / 1e6).toFixed(2)}Mb`)
+        total_size += buffers_size
+        console.log(`Uploading part ${part_number} of size ${(buffer.length / 1e6).toFixed(2)}Mb (${(total_size / 1e6).toFixed(2)})`)
         buffers = []
         buffers_size = 0
         const part_result = await this.#s3_client!.uploadPart({
