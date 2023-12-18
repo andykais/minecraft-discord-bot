@@ -54,7 +54,7 @@ class MinecraftServerService extends Service {
         break
       }
       case 'WARNING': {
-        discord_bot.send_message('MONITOR_CHANNEL', `WARNING: ${event.data.message}`)
+        // discord_bot.send_message('MONITOR_CHANNEL', `WARNING: ${event.data.message}`)
         break
       }
       case 'STARTED': {
